@@ -24,7 +24,6 @@ def TT_SVD(A, eps):
         G_k = np.reshape(U, (r_prev, A.shape[k], r_cur))
 
         cores.append(G_k)
-        f.write(str(S) + "\n\n\n" + str(Vt) + "\n\n\n\n\n\n")
         C = np.diag(S).dot(Vt)
         r_prev = r_cur
 
