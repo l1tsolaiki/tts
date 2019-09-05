@@ -29,13 +29,3 @@ def TT_SVD(A, eps):
 
     cores.append(C.reshape(*C.shape, 1))
     return cores
-
-
-a = np.array([[[1, 2],
-               [3, 4]],
-
-              [[5, 6],
-               [7, 8]]])
-
-cores = TT_SVD(a, 0.001)
-print(*cores, sep="\n\n\n\n")

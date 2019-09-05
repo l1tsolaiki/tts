@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 
 
@@ -7,6 +9,8 @@ class TensorTrain:
 
     def __init__(self, A, eps):                                            # A   - given tensor
         self.cores = []                                                    # eps - prescriped accuracy
+        self.dims = A.shape                                                # dimensions
+        self.size = A.size                                                 # number of elements
 
         delta = eps / (np.sqrt(len(A.shape) - 1)) * np.linalg.norm(A)      # truncation parameter
         C = np.copy(A)                                                     # temporary tensor
@@ -35,3 +39,17 @@ class TensorTrain:
 
         return U[:, :rank + 1], S[:rank + 1], Vt[:rank + 1, :]
 
+    def recover_tensor(self):
+        iter = itertools.product(*[range(self.dims[k]) for k in range(len(self.dims))])
+        tensor = np.zeros(self.dims)
+
+        for i in range(self.size):
+            index = next(iter)
+            res = self.cores[0][:, index[0], :]
+
+            for j in range(1, len(self.dims)):
+                res = res.dot(self.cores[j][:, index[j], :])
+
+            tensor[index] = res[0][0]
+
+        return tensor
