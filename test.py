@@ -25,7 +25,15 @@ print("tensor:", a, sep="\n", end="\n\nA")
 
 print("approximation:", approx, sep="\n")
 
+print(np.linalg.norm(a - approx))
+
 
 def recover_tensor(cores):
     # todo use product from itertools to iterate over tuples of indices
-    a = 9
+    # like this:
+    # dimensions = [4, 5, 2, 4, 7, 2]
+    # a = product(*[range(dimensions[k]) for k in range(len(dimensions))]) - iterator object
+    # then just do next(a) to get next index
+
+
+
