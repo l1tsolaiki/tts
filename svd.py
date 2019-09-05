@@ -4,8 +4,10 @@ import numpy as np
 def delta_svd(A, delta):
     U, S, Vt = np.linalg.svd(A, full_matrices=False)
     rank = len(S)
+
     while rank > 0 and np.linalg.norm(A - U[:, :rank].dot(np.diag(S[:rank])).dot(Vt[:rank, :])) <= delta:
         rank -= 1
+
     return U[:, :rank + 1], S[:rank + 1], Vt[:rank + 1, :]
 
 
@@ -22,15 +24,19 @@ def TT_SVD(A, eps):
         G_k = np.reshape(U, (r_prev, A.shape[k], r_cur))
 
         cores.append(G_k)
-        C = S.dot(Vt)
+        f.write(str(S) + "\n\n\n" + str(Vt) + "\n\n\n\n\n\n")
+        C = np.diag(S).dot(Vt)
         r_prev = r_cur
 
-    cores.append(C)
+    cores.append(C.reshape(*C.shape, 1))
     return cores
 
 
-a = np.array([[[1, 2], [3, 4]],
-              [[5, 6], [7, 8]]])
+a = np.array([[[1, 2],
+               [3, 4]],
 
-cores = TT_SVD(a, 1)
+              [[5, 6],
+               [7, 8]]])
+
+cores = TT_SVD(a, 0.001)
 print(*cores, sep="\n\n\n\n")
