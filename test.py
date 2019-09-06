@@ -1,7 +1,6 @@
 import numpy as np
 
-import TT_class
-from svd import TT_SVD
+from TT_class import TensorTrain
 
 a = np.array([[[1, 2],
                [3, 4]],
@@ -9,7 +8,7 @@ a = np.array([[[1, 2],
               [[5, 6],
                [7, 8]]])
 
-cores = TT_SVD(a, 0.001)
+# cores = TT_SVD(a, 0.001)
 
 approx = [[[0, 0],
            [0, 0]],
@@ -36,12 +35,13 @@ for i in range(2):
 #     # a = product(*[range(dimensions[k]) for k in range(len(dimensions))]) - iterator object
 #     # then just do next(a) to get next index
 
-eps = 0.01
+eps = 0.2
 
-A = TT_class.TensorTrain(a, eps)
+A = TensorTrain(a, eps)
 
 # print(*A.cores, sep="\n\n\n")
 
 # print(A.recover_tensor())
-print("A - B norm:", np.linalg.norm(a - A.recover_tensor()))
-print("eps * A norm:", eps * np.linalg.norm(a))
+print(*A.cores, sep="\n\n\n")
+# print("A - B norm:", np.linalg.norm(a - A.recover_tensor()))
+# print("eps * A norm:", eps * np.linalg.norm(a))

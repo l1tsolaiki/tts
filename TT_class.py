@@ -39,17 +39,19 @@ class TensorTrain:
 
         return U[:, :rank + 1], S[:rank + 1], Vt[:rank + 1, :]
 
+    def calc_elem(self, index):
+        res = self.cores[0][:, index[0], :]
+        for j in range(1, len(self.dims)):
+            res = res.dot(self.cores[j][:, index[j], :])
+
+        return res[0][0]
+
     def recover_tensor(self):
         iter = itertools.product(*[range(self.dims[k]) for k in range(len(self.dims))])
         tensor = np.zeros(self.dims)
 
         for i in range(self.size):
             index = next(iter)
-            res = self.cores[0][:, index[0], :]
-
-            for j in range(1, len(self.dims)):
-                res = res.dot(self.cores[j][:, index[j], :])
-
-            tensor[index] = res[0][0]
+            tensor[index] = self.calc_elem(index)
 
         return tensor
