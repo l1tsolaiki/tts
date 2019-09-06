@@ -17,11 +17,11 @@ class TensorTrain:
         r_prev, r_cur = 1, 0                                               # TT ranks
 
         for k in range(1, len(A.shape)):
-            C = np.reshape(C, (r_prev * A.shape[k], C.size // (r_prev * A.shape[k])))
+            C = np.reshape(C, (r_prev * A.shape[k - 1], C.size // (r_prev * A.shape[k - 1])))
 
             U, S, Vt = self.__delta_svd(C, delta)
             r_cur = len(S)
-            G_k = np.reshape(U, (r_prev, A.shape[k], r_cur))
+            G_k = np.reshape(U, (r_prev, A.shape[k - 1], r_cur))
 
             self.cores.append(G_k)
             C = np.diag(S).dot(Vt)
@@ -42,7 +42,10 @@ class TensorTrain:
     def calc_elem(self, index):
         res = self.cores[0][:, index[0], :]
         for j in range(1, len(self.dims)):
-            res = res.dot(self.cores[j][:, index[j], :])
+            try:
+                res = res.dot(self.cores[j][:, index[j], :])
+            except Exception:
+                print(index)
 
         return res[0][0]
 
