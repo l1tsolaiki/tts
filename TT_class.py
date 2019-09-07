@@ -1,4 +1,5 @@
 import itertools
+from functools import reduce
 
 import numpy as np
 
@@ -64,13 +65,48 @@ class TensorTrain:
 
         return tensor
 
+    def dot_prod(self, other):
+        v = np.kron(self.cores[0][:, 0, :], self.cores[0][:, 0, :])
+        for i in range(1, self.dims[0]):
+            v += np.kron(self.cores[0][:, i, :], self.cores[0][:, i, :])
+
+        for k in range(1, len(self.dims)):
+            p_k = []
+
+            for i in range(self.dims[k]):
+                p_k.append(v.dot(np.kron(self.cores[k][:, i, :], other.cores[k][:, i, :])))
+            v = sum(p_k)
+
+        return v[0][0]
+
     @staticmethod
     def addition(A, B):
         C_cores = []
-        # for i in range(1, len(A.shape) - 1):
+        c_1 = np.concatenate((A.get_cores()[0], B.get_cores()[0]), axis=2)
+        C_cores.append(c_1)
 
-        # C = TensorTrain()
-        C.construct_form_cores(C_cores, A.get_dims, A.get_size)
+        for i in range(1, len(A.get_dims()) - 1):
+            a_k = np.concatenate((A.get_cores()[i], np.zeros([B.get_dims()[0], A.get_dims()[1], A.get_dims()[2]])),
+                                 axis=2)
+            b_k = np.concatenate((np.zeros([A.get_dims()[0], B.get_dims()[1], B.get_dims()[2]]), B.get_cores()[i]),
+                                 axis=2)
+            c_k = np.concatenate((a_k, b_k), axis=0)
+            C_cores.append(c_k)
+
+        c_d = np.concatenate((A.get_cores()[len(A.get_dims()) - 1], B.get_cores()[len(B.get_dims()) - 1]), axis=0)
+        C_cores.append(c_d)
+        C = TensorTrain()
+        a = list(map(lambda x: x.shape[1], C_cores))
+        b = int(reduce(lambda x, y: x * y, [x.shape[1] for x in C_cores]))
+        C.construct_form_cores(C_cores, list(map(lambda x: x.shape[1], C_cores)), int(reduce(lambda x, y: x * y, [x.shape[1] for x in C_cores])))
+        return C
+
+    @staticmethod
+    def numb_multiply(A, alpha):
+        C_cores = A.get_cores()
+        C_cores[0] *= alpha
+        C = TensorTrain()
+        C.construct_form_cores(C_cores, A.get_dims(), A.get_size())
 
     # todo я бы на shape переименовал
     def get_dims(self):
@@ -91,16 +127,6 @@ class TensorTrain:
     def set_size(self, size):
         self.size = size
 
-
-A = np.array([[1, 2], [3, 4]])
-B = np.array([[5, 6], [7, 8]])
-C = np.column_stack((A, B))
-print(C)
-
-D = np.array([0, 9, 3, 22])
-F = np.row_stack((C, D))
-
-Q = np.zeros([3, 4])
-print(Q)
-
-print(F)
+    def test(self):
+        a = self.get_cores()
+        a = []
