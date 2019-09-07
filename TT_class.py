@@ -42,10 +42,7 @@ class TensorTrain:
     def calc_elem(self, index):
         res = self.cores[0][:, index[0], :]
         for j in range(1, len(self.dims)):
-            try:
-                res = res.dot(self.cores[j][:, index[j], :])
-            except Exception:
-                print(index)
+            res = res.dot(self.cores[j][:, index[j], :])
 
         return res[0][0]
 
