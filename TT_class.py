@@ -6,12 +6,18 @@ import numpy as np
 
 class TensorTrain:
 
+    def __init__(self, cores, shape, size):
+        self.shape = shape
+        self.cores = cores
+        self.size = size
+
     # converts given tensor to TT format upon initialization
 
-    def construct_from_tensor(self, A, eps):  # A   - given tensor
-        self.set_cores([])  # eps - prescriped accuracy
-        self.set_dims(A.shape)  # dimensions
-        self.set_size(A.size)  # number of elements
+    @staticmethod
+    def construct_from_tensor(A, eps):  # A   - given tensor
+        cores = []  # eps - prescribed accuracy
+        shape = A.shape  # dimensions
+        size = A.size  # number of elements
 
         delta = eps / (np.sqrt(len(A.shape) - 1)) * np.linalg.norm(A)  # truncation parameter
         C = np.copy(A)  # temporary tensor
@@ -20,20 +26,24 @@ class TensorTrain:
         for k in range(1, len(A.shape)):
             C = np.reshape(C, (r_prev * A.shape[k - 1], C.size // (r_prev * A.shape[k - 1])))
 
-            U, S, Vt = self.__delta_svd(C, delta)
+            U, S, Vt = TensorTrain.__delta_svd(C, delta)
             r_cur = len(S)
             G_k = np.reshape(U, (r_prev, A.shape[k - 1], r_cur))
 
-            self.cores.append(G_k)
+            cores.append(G_k)
             C = np.diag(S).dot(Vt)
             r_prev = r_cur
 
-        self.cores.append(C.reshape(*C.shape, 1))  # adding G_d
+        cores.append(C.reshape(*C.shape, 1))  # adding G_d
 
-    def construct_form_cores(self, cores, dims, size):
-        self.set_cores(cores)
-        self.set_dims(dims)
-        self.set_size(size)
+        return TensorTrain(cores, shape, size)
+
+    @staticmethod
+    def construct_form_cores(cores, shape, size):
+        cores = cores
+        shape = shape
+        size = size
+        return TensorTrain(cores, shape, size)
 
     @staticmethod
     def __delta_svd(A, delta):  # linearly search for best rank
@@ -47,17 +57,14 @@ class TensorTrain:
 
     def calc_elem(self, index):
         res = self.cores[0][:, index[0], :]
-        for j in range(1, len(self.dims)):
-            try:
-                res = res.dot(self.cores[j][:, index[j], :])
-            except Exception:
-                print(index)
+        for j in range(1, len(self.shape)):
+            res = res.dot(self.cores[j][:, index[j], :])
 
         return res[0][0]
 
     def recover_tensor(self):
-        iter = itertools.product(*[range(self.dims[k]) for k in range(len(self.dims))])
-        tensor = np.zeros(self.dims)
+        iter = itertools.product(*[range(self.shape[k]) for k in range(len(self.shape))])
+        tensor = np.zeros(self.shape)
 
         for i in range(self.size):
             index = next(iter)
@@ -67,13 +74,13 @@ class TensorTrain:
 
     def dot_prod(self, other):
         v = np.kron(self.cores[0][:, 0, :], self.cores[0][:, 0, :])
-        for i in range(1, self.dims[0]):
+        for i in range(1, self.shape[0]):
             v += np.kron(self.cores[0][:, i, :], self.cores[0][:, i, :])
 
-        for k in range(1, len(self.dims)):
+        for k in range(1, len(self.shape)):
             p_k = []
 
-            for i in range(self.dims[k]):
+            for i in range(self.shape[k]):
                 p_k.append(v.dot(np.kron(self.cores[k][:, i, :], other.cores[k][:, i, :])))
             v = sum(p_k)
 
@@ -82,51 +89,27 @@ class TensorTrain:
     @staticmethod
     def addition(A, B):
         C_cores = []
-        c_1 = np.concatenate((A.get_cores()[0], B.get_cores()[0]), axis=2)
+        c_1 = np.concatenate((A.cores[0], B.cores[0]), axis=2)
         C_cores.append(c_1)
 
-        for i in range(1, len(A.get_dims()) - 1):
-            a_k = np.concatenate((A.get_cores()[i], np.zeros([B.get_dims()[0], A.get_dims()[1], A.get_dims()[2]])),
-                                 axis=2)
-            b_k = np.concatenate((np.zeros([A.get_dims()[0], B.get_dims()[1], B.get_dims()[2]]), B.get_cores()[i]),
-                                 axis=2)
+        for i in range(1, len(A.shape) - 1):
+            a_k = np.concatenate((A.cores[i], np.zeros([B.shape[0], A.shape[1], A.shape[2]])), axis=2)
+            b_k = np.concatenate((np.zeros([A.shape[0], B.shape[1], B.shape[2]]), B.cores[i]), axis=2)
             c_k = np.concatenate((a_k, b_k), axis=0)
             C_cores.append(c_k)
 
-        c_d = np.concatenate((A.get_cores()[len(A.get_dims()) - 1], B.get_cores()[len(B.get_dims()) - 1]), axis=0)
+        c_d = np.concatenate((A.cores[len(A.shape) - 1], B.cores[len(B.shape) - 1]), axis=0)
         C_cores.append(c_d)
-        C = TensorTrain()
-        a = list(map(lambda x: x.shape[1], C_cores))
-        b = int(reduce(lambda x, y: x * y, [x.shape[1] for x in C_cores]))
-        C.construct_form_cores(C_cores, list(map(lambda x: x.shape[1], C_cores)), int(reduce(lambda x, y: x * y, [x.shape[1] for x in C_cores])))
+
+        C = TensorTrain.construct_form_cores(C_cores,
+                                             list(map(lambda x: x.shape[1], C_cores)),
+                                             int(reduce(lambda x, y: x * y, [x.shape[1] for x in C_cores])))
         return C
 
     @staticmethod
     def numb_multiply(A, alpha):
-        C_cores = A.get_cores()
+        C_cores = A.cores()
         C_cores[0] *= alpha
-        C = TensorTrain()
-        C.construct_form_cores(C_cores, A.get_dims(), A.get_size())
+        C = TensorTrain.construct_form_cores(C_cores, A.shape, A.size)
 
-    # todo я бы на shape переименовал
-    def get_dims(self):
-        return self.dims
-
-    def set_dims(self, shape):
-        self.dims = shape
-
-    def get_cores(self):
-        return self.cores
-
-    def set_cores(self, cores):
-        self.cores = cores
-
-    def get_size(self):
-        return self.size
-
-    def set_size(self, size):
-        self.size = size
-
-    def test(self):
-        a = self.get_cores()
-        a = []
+        return C
