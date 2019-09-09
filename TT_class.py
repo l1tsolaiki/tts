@@ -1,4 +1,5 @@
 import itertools
+import math
 from functools import reduce
 
 import numpy as np
@@ -85,6 +86,9 @@ class TensorTrain:
             v = sum(p_k)
 
         return v[0][0]
+
+    def norm(self):
+        return math.sqrt(self.dot_prod(self))
 
     @staticmethod
     def addition(A, B):
