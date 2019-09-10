@@ -3,6 +3,7 @@ import math
 from functools import reduce
 
 import numpy as np
+from scipy import linalg
 
 
 class TensorTrain:
@@ -117,3 +118,24 @@ class TensorTrain:
         C = TensorTrain.construct_form_cores(C_cores, A.shape, A.size)
 
         return C
+
+    def round(self, eps):
+        delta = eps / math.sqrt(len(self.shape) - 1) * self.norm()
+
+        for k in range(len(self.shape) - 1, 0, -1):
+            self.cores[k], R = linalg.rq(np.reshape(self.cores[k], (self.cores[k].shape[0], self.cores[k].shape[1] * self.cores[k].shape[2])))
+            self.cores[k] = np.tensordot(self.cores[k], R, axes=1)
+
+        for k in range(len(self.shape) - 2):
+            self.cores[k], S, V = np.linalg.svd(np.reshape(self.cores[k], full_matrices=False)
+            # S = [S[i] if S[i] > delta else 0 for i in range(S.shape[0])]
+            s = []
+            for i in range(S.shape[0]):
+                b = S[i]
+                if S[i] > delta:
+                    s.append(S[i])
+                else:
+                    s.append(0)
+            S = np.diag(S)
+            self.cores[k + 1] = np.tensordot(self.cores[k + 1], (V.dot(S)).T, axes=([0], [0]))
+        return 0
