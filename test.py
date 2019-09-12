@@ -1,3 +1,5 @@
+from timeit import default_timer as timer
+
 import numpy as np
 
 from TT_class import TensorTrain
@@ -16,6 +18,42 @@ def test(*size, eps):
     print("eps * norm(A):\t", eps * np.linalg.norm(tensor))
 
 
-A = TensorTrain.construct_from_tensor(np.random.rand(3, 4, 5, 6), 0.01)
-A.round(0.01)
-print(1)
+def test_addition(*size, A_eps, B_eps):
+    a = np.random.rand(*size)
+    b = np.random.rand(*size)
+
+    A = TensorTrain.construct_from_tensor(a, A_eps)
+    B = TensorTrain.construct_from_tensor(b, B_eps)
+
+    start = timer()
+    c = a + b
+    end = timer()
+    numpy = end - start
+
+    start = timer()
+    C = TensorTrain.add(A, B)
+    end = timer()
+    TT = end - start
+
+    return numpy, TT
+
+
+def test_norm(*size, eps):
+    a = np.random.rand(*size)
+    A = TensorTrain.construct_from_tensor(a, eps)
+
+    start = timer()
+    a_norm = np.linalg.norm(a)
+    end = timer()
+    numpy = end - start
+
+    start = timer()
+    A_norm = A.norm()
+    end = timer()
+    TT = end - start
+
+    return numpy, TT
+
+
+# print(test_addition(9, 99, 10, 322, 2, A_eps=0.3, B_eps=0.3))
+print(test_norm(9, 10, 20, 15, 2, eps=0.1))
