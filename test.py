@@ -55,5 +55,15 @@ def test_norm(*size, eps):
     return numpy, TT
 
 
-# print(test_addition(9, 99, 10, 322, 2, A_eps=0.3, B_eps=0.3))
-print(test_norm(9, 10, 20, 15, 2, eps=0.1))
+a = np.random.rand(20, 20, 20)
+A = TensorTrain.construct_from_tensor(a, eps=0.0001)
+A = TensorTrain.add(TensorTrain.add(A, A), A)
+a *= 3
+print(*[x.shape for x in A.cores], sep="\n", end="\n\n=========\n")
+A.round(0.2)
+print("\n", *[x.shape for x in A.cores], sep="\n")
+
+# b = A.recover_tensor()
+# print(a, b, sep="\n===================\n")
+# print(a - b)
+# print(np.linalg.norm(a - b))
