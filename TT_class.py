@@ -133,16 +133,11 @@ class TensorTrain:
         for k in range(len(self.shape) - 2):
             r1, n, r2 = self.cores[k].shape
             self.cores[k], S, Vt = np.linalg.svd(np.reshape(self.cores[k], (r1 * n, r2)), full_matrices=False)
-            s = [S[i] if S[i] >= delta else 0 for i in range(len(S))]
+            s = [S[i] for i in range(len(S)) if S[i] >= delta]
             S = np.diag(s)
-            # print("cores1 = ", self.cores[k].shape)
-            # print("S.shape =", S.shape)
-            # print("Vt.shape =", Vt.shape)
-            # print("cores =", self.cores[k + 1].shape)
+            self.cores[k] = self.cores[k][:, :len(S)]
+            Vt = Vt[:len(S), :]
 
-            # r2 = self.cores[k].shape[1] // (r1 * n)
-            # print("r2 =", r2)
             self.cores[k + 1] = np.tensordot((S.dot(Vt)).T, self.cores[k + 1], axes=([0], [0]))
-            # print("cores after =", self.cores[k + 1].shape)
             self.cores[k] = np.reshape(self.cores[k], (r1, n, self.cores[k].shape[1]))
         return 0
