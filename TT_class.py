@@ -1,5 +1,6 @@
 import itertools
 import math
+from copy import deepcopy
 from functools import reduce
 
 import numpy as np
@@ -112,7 +113,34 @@ class TensorTrain:
         return C
 
     @staticmethod
-    def numb_multiply(A, alpha):
+    def subtract(A, B):
+        C_cores = []
+        c_1 = np.concatenate((A.cores[0], -1 * B.cores[0]), axis=2)
+        C_cores.append(c_1)
+
+        for i in range(1, len(A.shape) - 1):
+            a_k = np.concatenate(
+                (A.cores[i], np.zeros([A.cores[i].shape[0], A.cores[i].shape[1], B.cores[i].shape[2]])), axis=2)
+            b_k = np.concatenate(
+                (np.zeros([B.cores[i].shape[0], B.cores[i].shape[1], A.cores[i].shape[2]]), B.cores[i]), axis=2)
+
+            c_k = np.concatenate((a_k, b_k), axis=0)
+            C_cores.append(c_k)
+
+        c_d = np.concatenate((A.cores[len(A.shape) - 1], B.cores[len(B.shape) - 1]), axis=0)
+        C_cores.append(c_d)
+
+        C = TensorTrain.construct_form_cores(C_cores,
+                                             list(map(lambda x: x.shape[1], C_cores)),
+                                             int(reduce(lambda x, y: x * y, [x.shape[1] for x in C_cores])))
+
+        return C
+
+    def get_cores_size(self):
+        return int(reduce(lambda x, y: x + y, [x.shape[0] * x.shape[1] * x.shape[2] for x in self.cores]))
+
+    @staticmethod
+    def scale(A, alpha):
         C_cores = A.cores()
         C_cores[0] *= alpha
         C = TensorTrain.construct_form_cores(C_cores, A.shape, A.size)
@@ -121,23 +149,26 @@ class TensorTrain:
 
     def round(self, eps):
         delta = eps / math.sqrt(len(self.shape) - 1) * self.norm()
+        cores = deepcopy(self.cores)
 
+        # QR
         for k in range(len(self.shape) - 1, 0, -1):
-            r1, n, r2 = self.cores[k].shape
-            self.cores[k], R = np.linalg.qr(np.reshape(self.cores[k], (r1, n * r2)).T)
-            r1 = self.cores[k].shape[1]
-            self.cores[k] = np.reshape(self.cores[k].T, (r1, n, r2))
-            self.cores[k - 1] = np.tensordot(self.cores[k - 1], R.T, axes=1)
-        # print(*[x.shape for x in self.cores], sep="\n")
+            r1, n, r2 = cores[k].shape
+            cores[k], R = np.linalg.qr(np.reshape(cores[k], (r1, n * r2)).T)
+            r1 = cores[k].shape[1]
+            cores[k] = np.reshape(cores[k].T, (r1, n, r2))
+            cores[k - 1] = np.tensordot(cores[k - 1], R.T, axes=1)
 
+        # SVD
         for k in range(len(self.shape) - 2):
-            r1, n, r2 = self.cores[k].shape
-            self.cores[k], S, Vt = np.linalg.svd(np.reshape(self.cores[k], (r1 * n, r2)), full_matrices=False)
+            r1, n, r2 = cores[k].shape
+            cores[k], S, Vt = np.linalg.svd(np.reshape(cores[k], (r1 * n, r2)), full_matrices=False)
             s = [S[i] for i in range(len(S)) if S[i] >= delta]
             S = np.diag(s)
-            self.cores[k] = self.cores[k][:, :len(S)]
+            cores[k] = cores[k][:, :len(S)]
             Vt = Vt[:len(S), :]
 
-            self.cores[k + 1] = np.tensordot((S.dot(Vt)).T, self.cores[k + 1], axes=([0], [0]))
-            self.cores[k] = np.reshape(self.cores[k], (r1, n, self.cores[k].shape[1]))
-        return 0
+            cores[k + 1] = np.tensordot((S.dot(Vt)).T, cores[k + 1], axes=([0], [0]))
+            cores[k] = np.reshape(cores[k], (r1, n, cores[k].shape[1]))
+
+        return TensorTrain.construct_form_cores(cores, self.shape, self.size)
