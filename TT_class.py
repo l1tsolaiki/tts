@@ -89,7 +89,7 @@ class TensorTrain:
         return v[0][0]
 
     def norm(self):
-        return math.sqrt(self.dot_prod(self))
+        return math.sqrt(abs(self.dot_prod(self)))
 
     @staticmethod
     def add(A, B):
