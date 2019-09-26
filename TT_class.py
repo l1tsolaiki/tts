@@ -42,9 +42,6 @@ class TensorTrain:
 
     @staticmethod
     def construct_form_cores(cores, shape, size):
-        cores = cores
-        shape = shape
-        size = size
         return TensorTrain(cores, shape, size)
 
     @staticmethod
@@ -123,7 +120,6 @@ class TensorTrain:
                 (A.cores[i], np.zeros([A.cores[i].shape[0], A.cores[i].shape[1], B.cores[i].shape[2]])), axis=2)
             b_k = np.concatenate(
                 (np.zeros([B.cores[i].shape[0], B.cores[i].shape[1], A.cores[i].shape[2]]), B.cores[i]), axis=2)
-
             c_k = np.concatenate((a_k, b_k), axis=0)
             C_cores.append(c_k)
 
