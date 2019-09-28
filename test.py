@@ -50,9 +50,9 @@ def test_norm(*size, eps):
 def get_rounding_data(file=open("rounding_raw.txt", "w", encoding="utf-8")):
 
     '''
-    generates a random tensor of dimension d with d_i randomly selected from {3, ..., 10}
+    generates a random tensor of dimension d with d_i randomly selected from {3, ..., 8}
     calculates its TT representation with high precision (0.0001) using TT-SVD
-    then calculates rounded version of this representation with eps consequentially increasing by 0.1 each iteration
+    then calculates rounded version of this representation with eps consequentially increasing each iteration
     finally outputs the number of elements required to store this representation and its accuracy, calculated
     as norm of (initial representation - rounded)
     '''
@@ -140,4 +140,7 @@ def get_ttsvd_time_data():
         print(i, "DONE")
 
 
+get_ttsvd_data()
 get_ttsvd_time_data()
+get_sum_data()
+get_rounding_data()

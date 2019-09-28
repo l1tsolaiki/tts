@@ -69,3 +69,6 @@ def plot_ttsvd_time():
 
 
 plot_ttsvd_time()
+plot_size()
+plot_ttsvd()
+plot_sum_time()
